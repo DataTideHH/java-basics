@@ -1,6 +1,6 @@
 # java-basics
 
-Java 21 setup test project using IntelliJ IDEA and Eclipse Temurin on macOS.
+Java 21 setup test project developed on macOS using IntelliJ IDEA and Eclipse Temurin.
 
 ## Purpose
 
@@ -13,7 +13,7 @@ This repository documents a small Java learning setup used to verify that:
 
 ## Environment
 
-- macOS Sonoma on Intel Mac
+- Developed on macOS Sonoma on Intel Mac
 - IntelliJ IDEA
 - Eclipse Temurin 21 LTS
 - Java 21
