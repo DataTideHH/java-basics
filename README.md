@@ -13,7 +13,7 @@ This repository documents a small Java learning setup used to verify that:
 
 ## Environment
 
-- Developed on macOS Sonoma on Intel Mac
+- Developed on an Intel Mac running macOS Sonoma
 - IntelliJ IDEA
 - Eclipse Temurin 21 LTS
 - Java 21
