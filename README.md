@@ -1,6 +1,6 @@
 # Java Basics
 
-A small Java 21 setup and learning repository for my local developer environment.
+A small Java 21 learning project that verifies my local Java toolchain and includes a command-line IPv4 subnet calculator.
 
 This repository verifies that a Java 21 workflow works correctly with IntelliJ IDEA, Eclipse Temurin, Git, and GitHub on my Intel Mac setup.
 
