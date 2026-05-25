@@ -34,7 +34,8 @@ This repository also documents that the Java 21 workflow works on a legacy Intel
 java-basics/
 ├── src/
 │   ├── HelloWorld.java
-│   └── Main.java
+│   ├── Main.java
+│   └── SubnetCalculator.java
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -50,12 +51,32 @@ out/
 
 ## Run in IntelliJ IDEA
 
-Open the project in IntelliJ IDEA and run `HelloWorld.main()` or `Main.main()`.
+Open the project in IntelliJ IDEA and run one of the following entry points:
+
+- `HelloWorld.main()`
+- `Main.main()`
+- `SubnetCalculator.main()`
+
+For `SubnetCalculator.main()`, use the following program argument:
+
+```text
+192.168.10.42/24
+```
 
 Expected output:
 
 ```text
-Java 21 läuft sauber in IntelliJ.
+Input IP:          192.168.10.42
+CIDR prefix:       /24
+Subnet mask:       255.255.255.0
+Wildcard mask:     0.0.0.255
+Network address:   192.168.10.0
+Broadcast address: 192.168.10.255
+Total addresses:   256
+Usable hosts:      254
+First usable host: 192.168.10.1
+Last usable host:  192.168.10.254
+Note:              Standard subnet with network and broadcast addresses excluded.
 ```
 
 ## Run from Terminal
@@ -72,6 +93,28 @@ Run `HelloWorld`:
 java -cp out HelloWorld
 ```
 
+Run the IPv4 subnet calculator:
+
+```zsh
+java -cp out SubnetCalculator 192.168.10.42/24
+```
+
+Expected output:
+
+```text
+Input IP:          192.168.10.42
+CIDR prefix:       /24
+Subnet mask:       255.255.255.0
+Wildcard mask:     0.0.0.255
+Network address:   192.168.10.0
+Broadcast address: 192.168.10.255
+Total addresses:   256
+Usable hosts:      254
+First usable host: 192.168.10.1
+Last usable host:  192.168.10.254
+Note:              Standard subnet with network and broadcast addresses excluded.
+```
+
 ## What This Demonstrates
 
 This repository demonstrates a working Java 21 baseline setup using:
@@ -79,6 +122,13 @@ This repository demonstrates a working Java 21 baseline setup using:
 - Eclipse Temurin 21 LTS as the project JDK
 - IntelliJ IDEA as the primary Java IDE
 - a simple `src/` based project structure
+- a small command-line IPv4 subnet calculator
+- Java records for structured result data
+- IPv4 parsing and validation
+- CIDR prefix handling
+- subnet mask and wildcard mask calculation
+- network and broadcast address calculation
+- basic bitwise operations in Java
 - local build output excluded from Git
 - Git and GitHub for version control
 
@@ -87,7 +137,7 @@ This repository demonstrates a working Java 21 baseline setup using:
 Possible future additions:
 
 - basic Java class and object examples
-- small command-line exercises
+- additional small command-line exercises
 - simple file input/output examples
 - a small CSV parser
 - basic unit tests later on
