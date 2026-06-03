@@ -33,7 +33,6 @@ This repository also documents that the Java 21 workflow works on a legacy Intel
 ```text
 java-basics/
 ├── src/
-│   ├── HelloWorld.java
 │   ├── Main.java
 │   └── SubnetCalculator.java
 ├── .gitignore
@@ -53,7 +52,6 @@ out/
 
 Open the project in IntelliJ IDEA and run one of the following entry points:
 
-- `HelloWorld.main()`
 - `Main.main()`
 - `SubnetCalculator.main()`
 
@@ -87,10 +85,10 @@ Compile the source files:
 javac -d out src/*.java
 ```
 
-Run `HelloWorld`:
+Run `Main`:
 
 ```zsh
-java -cp out HelloWorld
+java -cp out Main
 ```
 
 Run the IPv4 subnet calculator:
