@@ -1,5 +1,3 @@
-import java.util.Optional;
-
 public class SubnetCalculator {
     private record Calculation(
             String inputIp,
@@ -22,15 +20,14 @@ public class SubnetCalculator {
             System.exit(1);
         }
 
-        Optional<Calculation> result = calculate(args[0]);
-
-        if (result.isEmpty()) {
-            System.err.println("Error: invalid input.");
+        try {
+            Calculation result = calculate(args[0]);
+            printResult(result);
+        } catch (IllegalArgumentException error) {
+            System.err.println("Error: " + error.getMessage());
             System.err.println("Expected format: IPv4/CIDR, for example 192.168.10.42/24");
             System.exit(1);
         }
-
-        printResult(result.get());
     }
 
     private static void printUsage() {
@@ -59,40 +56,62 @@ public class SubnetCalculator {
         System.out.println("Note:              " + result.note());
     }
 
-    private static Optional<Calculation> calculate(String cidr) {
-        int slashPosition = cidr.indexOf('/');
-
-        if (slashPosition < 0) {
-            return Optional.empty();
+    private static Calculation calculate(String cidr) {
+        if (cidr == null) {
+            throw new IllegalArgumentException("Input is missing.");
         }
 
-        String ipText = cidr.substring(0, slashPosition);
-        String prefixText = cidr.substring(slashPosition + 1);
+        String trimmed = cidr.trim();
 
-        Optional<Long> ip = parseIpv4(ipText);
-        Optional<Integer> prefix = parsePrefix(prefixText);
-
-        if (ip.isEmpty() || prefix.isEmpty()) {
-            return Optional.empty();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("Input is empty.");
         }
 
-        long mask = prefixToMask(prefix.get());
+        int firstSlash = trimmed.indexOf('/');
+        int lastSlash = trimmed.lastIndexOf('/');
+
+        if (firstSlash < 0) {
+            throw new IllegalArgumentException("Missing '/' separator.");
+        }
+
+        if (firstSlash != lastSlash) {
+            throw new IllegalArgumentException("Input must contain exactly one '/'.");
+        }
+
+        String ipText = trimmed.substring(0, firstSlash);
+        String prefixText = trimmed.substring(firstSlash + 1);
+
+        if (ipText.isEmpty()) {
+            throw new IllegalArgumentException("IPv4 address is empty.");
+        }
+
+        if (prefixText.isEmpty()) {
+            throw new IllegalArgumentException("CIDR prefix is empty.");
+        }
+
+        long ip = parseIpv4(ipText);
+        int prefix = parsePrefix(prefixText);
+
+        long mask = prefixToMask(prefix);
         long wildcard = (~mask) & 0xFFFFFFFFL;
-        long network = ip.get() & mask;
+        long network = ip & mask;
         long broadcast = network | wildcard;
-        long totalAddresses = 1L << (32 - prefix.get());
+        // For prefix == 0, this evaluates 1L << 32. Safe because 1L is a long
+        // (64-bit), so the result is 2^32 = 4294967296. With an int (1 << 32),
+        // the shift would wrap to 1.
+        long totalAddresses = 1L << (32 - prefix);
 
         long usableHosts;
         long firstUsable;
         long lastUsable;
         String note;
 
-        if (prefix.get() <= 30) {
+        if (prefix <= 30) {
             usableHosts = totalAddresses - 2;
             firstUsable = network + 1;
             lastUsable = broadcast - 1;
             note = "Standard subnet with network and broadcast addresses excluded.";
-        } else if (prefix.get() == 31) {
+        } else if (prefix == 31) {
             usableHosts = 2;
             firstUsable = network;
             lastUsable = broadcast;
@@ -104,9 +123,9 @@ public class SubnetCalculator {
             note = "/32 host route: single usable address.";
         }
 
-        return Optional.of(new Calculation(
+        return new Calculation(
                 ipText,
-                prefix.get(),
+                prefix,
                 toIpv4(mask),
                 toIpv4(wildcard),
                 toIpv4(network),
@@ -116,47 +135,84 @@ public class SubnetCalculator {
                 toIpv4(firstUsable),
                 toIpv4(lastUsable),
                 note
-        ));
+        );
     }
 
-    private static Optional<Integer> parsePrefix(String prefixText) {
-        try {
-            int prefix = Integer.parseInt(prefixText);
-
-            if (prefix < 0 || prefix > 32) {
-                return Optional.empty();
-            }
-
-            return Optional.of(prefix);
-        } catch (NumberFormatException error) {
-            return Optional.empty();
+    private static int parsePrefix(String prefixText) {
+        if (!isAllDigits(prefixText)) {
+            throw new IllegalArgumentException(
+                    "Prefix must contain only digits: " + prefixText);
         }
+
+        int prefix;
+        try {
+            prefix = Integer.parseInt(prefixText);
+        } catch (NumberFormatException error) {
+            throw new IllegalArgumentException(
+                    "Prefix is not a valid number: " + prefixText);
+        }
+
+        if (prefix < 0 || prefix > 32) {
+            throw new IllegalArgumentException(
+                    "Prefix out of range (0-32): " + prefix);
+        }
+
+        return prefix;
     }
 
-    private static Optional<Long> parseIpv4(String ipText) {
+    private static long parseIpv4(String ipText) {
         String[] parts = ipText.split("\\.", -1);
 
         if (parts.length != 4) {
-            return Optional.empty();
+            throw new IllegalArgumentException(
+                    "IPv4 must have exactly four octets: " + ipText);
         }
 
         long result = 0;
 
         for (String part : parts) {
-            try {
-                int octet = Integer.parseInt(part);
-
-                if (octet < 0 || octet > 255) {
-                    return Optional.empty();
-                }
-
-                result = (result << 8) | octet;
-            } catch (NumberFormatException error) {
-                return Optional.empty();
+            if (part.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "IPv4 octet is empty in: " + ipText);
             }
+
+            if (!isAllDigits(part)) {
+                throw new IllegalArgumentException(
+                        "IPv4 octet must contain only digits: " + part);
+            }
+
+            if (part.length() > 1 && part.charAt(0) == '0') {
+                throw new IllegalArgumentException(
+                        "IPv4 octet must not have leading zeros: " + part);
+            }
+
+            int octet;
+            try {
+                octet = Integer.parseInt(part);
+            } catch (NumberFormatException error) {
+                throw new IllegalArgumentException(
+                        "IPv4 octet is not a valid number: " + part);
+            }
+
+            if (octet < 0 || octet > 255) {
+                throw new IllegalArgumentException(
+                        "IPv4 octet out of range (0-255): " + octet);
+            }
+
+            result = (result << 8) | octet;
         }
 
-        return Optional.of(result);
+        return result;
+    }
+
+    private static boolean isAllDigits(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static long prefixToMask(int prefix) {
